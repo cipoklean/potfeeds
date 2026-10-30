@@ -1,0 +1,16 @@
+[Unit]
+Description=PotFeeds feeder agent (publishes BTC/ETH/DOT prices)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/potfeeds
+EnvironmentFile=%h/potfeeds/.env
+Environment=NETWORK=portaldotTestnet
+ExecStart=%h/potfeeds/node_modules/.bin/tsx agent/src/feeder.ts
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
