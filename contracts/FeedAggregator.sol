@@ -38,6 +38,7 @@ contract FeedAggregator {
     event AnswerSubmitted(bytes32 indexed feedId, uint80 indexed roundId, address indexed feeder, int256 answer);
     event RoundFinalized(bytes32 indexed feedId, uint80 indexed roundId, int256 answer, uint256 submissions);
     event FeedPaused(bytes32 indexed feedId, address indexed by, string reason);
+    event FeedActivated(bytes32 indexed feedId);
     event MinSubmissionsSet(bytes32 indexed feedId, uint8 minSubmissions);
 
     error NotOwner();
@@ -90,6 +91,14 @@ contract FeedAggregator {
         if (bytes(feeds[feedId].description).length == 0) revert UnknownFeed();
         feeds[feedId].active = false;
         emit FeedPaused(feedId, msg.sender, reason);
+    }
+
+    /// @notice Owner re-enables a paused feed (a single feeder must not be able
+    ///         to kill a feed permanently).
+    function setFeedActive(bytes32 feedId, bool active) external onlyOwner {
+        if (bytes(feeds[feedId].description).length == 0) revert UnknownFeed();
+        feeds[feedId].active = active;
+        if (active) emit FeedActivated(feedId);
     }
 
     // ---------------- feeders ----------------

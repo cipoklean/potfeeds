@@ -3,10 +3,10 @@
 ## Contracts (`contracts/`)
 
 ### FeedAggregator.sol
-- Owner registers feeder addresses (`setFeeder`) and feeds (`createFeed(description, decimals, minSubmissions, heartbeat)`). `feedId = keccak256(description)`, e.g. `keccak256("BTC / USD")`.
+- Owner registers feeder addresses (`setFeeder`) and feeds (`createFeed(description, decimals, minSubmissions, heartbeat)`). `feedId = keccak256(description)`, e.g. `keccak256("BTC / USD")`. Owner can adjust a feed's quorum (`setMinSubmissions`) without redeploying.
 - Rounds are sequential. The open round is `latestRound + 1`. Each feeder submits once per round. When `minSubmissions` answers arrive, the round finalizes at the median (even count: mean of the middle two).
-- Any feeder can `pauseFeed(feedId, reason)` (circuit breaker). Only the owner re-activates (`setFeedActive`).
-- Reads: `latestRoundData(feedId)` (Chainlink shape), `latestAnswer`, `isStale`.
+- Any feeder can `pauseFeed(feedId, reason)` (circuit breaker). Only the owner re-activates (`setFeedActive`) — a single feeder cannot kill a feed permanently.
+- Reads: `latestRoundData(feedId)` (Chainlink shape), `latestAnswer`.
 - Answers use 8 decimals (USD prices), independent of the native token's decimals.
 
 ### KeeperRegistry.sol

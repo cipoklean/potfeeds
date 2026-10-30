@@ -45,6 +45,20 @@ describe("PotFeeds", function () {
     await expect(agg.connect(b).submit(id(BTC), 1, 1)).to.be.revertedWithCustomError(agg, "FeedInactive");
   });
 
+  it("owner re-enables a paused feed; non-owner cannot", async () => {
+    await agg.connect(a).pauseFeed(id(BTC), "outage");
+    await expect(agg.connect(b).submit(id(BTC), 1, 100)).to.be.revertedWithCustomError(agg, "FeedInactive");
+
+    await expect(agg.connect(b).setFeedActive(id(BTC), true)).to.be.revertedWithCustomError(agg, "NotOwner");
+
+    await expect(agg.setFeedActive(id(BTC), true)).to.emit(agg, "FeedActivated").withArgs(id(BTC));
+
+    await agg.connect(a).submit(id(BTC), 1, 100);
+    await agg.connect(b).submit(id(BTC), 1, 300);
+    await expect(agg.connect(c).submit(id(BTC), 1, 200)).to.emit(agg, "RoundFinalized").withArgs(id(BTC), 1, 200, 3);
+    expect(await agg.latestAnswer(id(BTC))).to.equal(200n);
+  });
+
   it("keeper executes a price-triggered job and gets paid", async () => {
     const data = vault.interface.encodeFunctionData("enterProtectedMode");
     const reward = ethers.parseEther("0.1");
