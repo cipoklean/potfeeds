@@ -65,6 +65,26 @@ Details: the feeder uses the real `agent/src/sources.ts` exchange gathers and
 (`staticCall`) before executing. The job is `oneShot`, so it fires exactly once
 and the vault ends in `protectedMode`.
 
+## Read-only status page
+
+`frontend/index.html` is a single static page (no build step) that shows feeds,
+latest rounds and recent keeper runs straight from the testnet chain. It reads
+`deployments/<network>.json` and uses `ethers` from a CDN.
+
+```bash
+# serve the repo root, then open http://localhost:8000/frontend/
+python3 -m http.server 8000
+```
+
+Defaults to the testnet; override with query params:
+
+```
+/frontend/?network=portaldotTestnet&rpc=https://test-evm-rpc-v3.portaldot.dev
+/frontend/?network=local&rpc=http://127.0.0.1:18545
+```
+
+It never writes — it is a read-only viewer.
+
 ## Portaldot V3 testnet
 
 | Item | Value |

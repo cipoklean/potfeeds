@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PotFeeds status</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<style>
+  body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0; background: #0f1115; color: #e6e6e6; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 20px; color: #fff; margin: 0 0 4px; }
+  .sub { color: #8a8f98; font-size: 13px; margin-bottom: 20px; }
+  h2 { font-size: 14px; color: #9aa0aa; text-transform: uppercase; letter-spacing: .08em; margin: 28px 0 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: #8a8f98; font-weight: 500; padding: 6px 10px; border-bottom: 1px solid #262a31; }
+  td { padding: 6px 10px; border-bottom: 1px solid #1c1f26; }
+  .pill { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 12px; }
+  .yes { background: #0f2e22; color: #4ade80; }
+  .no { background: #331616; color: #f87171; }
+  .muted { color: #6b7078; }
+  #fatal { color: #f87171; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>PotFeeds · read-only status</h1>
+  <div class="sub" id="net">loading…</div>
+
+  <h2>Feeds / latest rounds</h2>
+  <table id="feeds"><tbody><tr><td class="muted">loading…</td></tr></tbody></table>
+
+  <h2>Recent keeper runs (JobExecuted)</h2>
+  <table id="runs"><tbody><tr><td class="muted">loading…</td></tr></tbody></table>
+
+  <div id="fatal" hidden></div>
+</div>
+<script>
+"use strict";
+const FEED_NAMES = ["BTC / USD", "ETH / USD", "DOT / USD"];
+const AGG_ABI = [
+  "function feeds(bytes32) view returns (string description,uint8 decimals,uint8 minSubmissions,uint32 heartbeat,bool active,uint80 latestRound)",
+  "function rounds(bytes32,uint80) view returns (int256 answer,uint64 startedAt,uint64 updatedAt,bool finalized)",
+  "event RoundFinalized(bytes32 indexed feedId,uint80 indexed roundId,int256 answer,uint256 submissions)",
+];
+const REG_ABI = [
+  "function jobCount() view returns (uint256)",
+  "function jobs(uint256) view returns (address owner,address target,bytes data,uint8 trigger,uint64 interval,uint64 lastRun,bytes32 feedId,int256 threshold,uint256 reward,uint256 balance,bool active,bool oneShot)",
+  "event JobExecuted(uint256 indexed jobId,address indexed keeper,bool success,uint256 reward)",
+];
+const DEFAULT_RPC = "https://test-evm-rpc-v3.portaldot.dev";
+const DEFAULT_NETWORK = "portaldotTestnet";
+const RUNS_BLOCKS = 20000;
+
+async function main() {
+  const params = new URLSearchParams(location.search);
+  const rpc = params.get("rpc") || DEFAULT_RPC;
+  const network = params.get("network") || DEFAULT_NETWORK;
+
+  let dep = null;
+  for (const base of ["../deployments/", "deployments/"]) {
+    try {
+      const r = await fetch(`${base}${network}.json`);
+      if (r.ok) { dep = await r.json(); break; }
+    } catch { /* try next */ }
+  }
+
+  document.getElementById("net").textContent =
+    (dep ? `deployed@${network}` : `${network} (not deployed yet)`) + ` · ${rpc} · read-only`;
+
+  if (!dep) {
+    document.querySelector("#feeds tbody").innerHTML =
+      '<tr><td class="muted">No deployments found — run <code>npm run deploy:testnet</code> first.</td></tr>';
+    document.querySelector("#runs tbody").innerHTML =
+      '<tr><td class="muted">n/a</td></tr>';
+    return;
+  }
+
+  const provider = new ethers.JsonRpcProvider(rpc);
+  const agg = new ethers.Contract(dep.FeedAggregator.address, AGG_ABI, provider);
+  const reg = new ethers.Contract(dep.KeeperRegistry.address, REG_ABI, provider);
+
+  // feeds
+  const rows = [];
+  for (const name of FEED_NAMES) {
+    const id = ethers.keccak256(ethers.toUtf8Bytes(name));
+    const f = await agg.feeds(id);
+    let ans = "-", updated = "-";
+    if (f.latestRound > 0n) {
+      const r = await agg.rounds(id, f.latestRound);
+      ans = (Number(r.answer) / 10 ** Number(f.decimals)).toFixed(Number(f.decimals)).replace(/0+$/,"").replace(/\.$/,"");
+      updated = new Date(Number(r.updatedAt) * 1000).toISOString().slice(0, 19).replace("T", " ");
+    }
+    rows.push(`<tr>
+      <td>${name}</td>
+      <td><span class="pill ${f.active ? "yes" : "no"}">${f.active ? "active" : "paused"}</span></td>
+      <td>round ${f.latestRound.toString()}</td>
+      <td>${ans}</td>
+      <td class="muted">quorum ${f.minSubmissions} · heartbeat ${f.heartbeat}s</td>
+      <td class="muted">${updated}</td>
+    </tr>`);
+  }
+  document.querySelector("#feeds tbody").innerHTML = rows.join("");
+
+  // recent keeper runs
+  const latest = await provider.getBlockNumber();
+  const from = Math.max(0, latest - RUNS_BLOCKS);
+  const events = await reg.queryFilter(reg.filters.JobExecuted(), from, latest);
+  events.reverse();
+  const runRows = events.slice(0, 30).map((e) => {
+    const jid = e.args[0].toString();
+    const ok = e.args[2];
+    const reward = ethers.formatEther(e.args[3]);
+    return `<tr>
+      <td>job #${jid}</td>
+      <td class="muted">${e.args[1].slice(0, 10)}…${e.args[1].slice(-6)}</td>
+      <td><span class="pill ${ok ? "yes" : "no"}">${ok ? "success" : "failed"}</span></td>
+      <td>${reward} tPOT</td>
+      <td class="muted">block ${e.blockNumber}</td>
+    </tr>`;
+  });
+  document.querySelector("#runs tbody").innerHTML = runRows.length
+    ? runRows.join("")
+    : '<tr><td class="muted">no JobExecuted events in last ' + RUNS_BLOCKS + ' blocks</td></tr>';
+}
+
+main().catch((e) => {
+  const el = document.getElementById("fatal");
+  el.hidden = false;
+  el.textContent = "error: " + (e && e.message ? e.message : e);
+});
+</script>
+</body>
+</html>
