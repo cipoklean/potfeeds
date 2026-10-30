@@ -68,3 +68,8 @@ Read this whole file before touching the repo. It's the single source of truth f
 3. Public V3 mainnet EVM endpoint?
 4. How the 14 native decimals map on the EVM side?
 Log any answers in this file under a new "Answers" heading.
+
+## Answers / findings
+- Oct 31, 2026: EVM funding via the mapped twin works. Sending 2 tPOT natively (SubWallet) to `node scripts/evm-to-ss58.js <0x>` output made `eth_getBalance` show 1.9e18 wei. So EVM side uses 18 decimals at 1:1 value with native tPOT (14 decimals scaled by 10^4); ~0.1 tPOT appears held back, most likely the existential deposit (inferred, not documented).
+- David's deployer is his own MetaMask testnet wallet; he adds DEPLOYER_KEY to `.env` himself. Never ask for or print it.
+- Project name is TBD; "PotFeeds" is a working title.
