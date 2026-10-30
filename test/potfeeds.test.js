@@ -80,7 +80,7 @@ describe("PotFeeds", function () {
   });
 
   it("setMinSubmissions reverts for zero minSubmissions or unknown feed", async () => {
-    await expect(agg.setMinSubmissions(id(BTC), 0)).to.be.revertedWith("quorum");
+    await expect(agg.setMinSubmissions(id(BTC), 0)).to.be.revertedWithCustomError(agg, "ZeroQuorum");
     await expect(agg.setMinSubmissions(id("NOPE / USD"), 5)).to.be.revertedWithCustomError(agg, "UnknownFeed");
   });
 

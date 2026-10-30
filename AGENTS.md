@@ -45,14 +45,20 @@ Read this whole file before touching the repo. It's the single source of truth f
 
 ## Current status (Oct 30, 2026)
 - [x] Idea chosen, research done (no other oracle or keeper project among ~67 builds).
-- [x] Contracts + tests (7 passing locally), feeder/keeper agents, live source fetch verified (BTC from Coinbase, Kraken, CoinGecko, Bitstamp; Binance may be geo-blocked).
-- [ ] Fund a fresh EVM deployer key with tPOT (see funding step).
+- [x] Contracts + tests (**10 passing locally**), feeder/keeper agents, live source fetch verified (BTC from Coinbase, Kraken, CoinGecko, Bitstamp; Binance may be geo-blocked).
+- [x] Bytecode shrink: optimizer runs 1 + viaIR on, leftover require strings swapped for custom errors, unused aggregator views dropped (FeedAggregator 6221 → 3992 creation bytes; KeeperRegistry 4616 → 3674; DemoVault 916 → 958; all 10 tests pass).
+- [ ] Fund a fresh EVM deployer key with tPOT (see funding step) — **in progress: asked team for more tPOT; do not deploy until funded**.
 - [ ] `npm run deploy:testnet`, then paste addresses + tx hashes into README.
 - [ ] Run 3 feeder agents with 3 different keys (`EXTRA_FEEDERS` at deploy, then `QUORUM=3`), or redeploy with quorum 3.
 - [ ] Register a PriceBelow job on DemoVault + an Interval job; run keeper; capture tx hashes.
 - [ ] Run feeder + keeper as systemd user services on the Oracle Cloud ARM VM (Hermes host).
 - [ ] Small dashboard page (optional): feeds, rounds, agent decisions, keeper runs.
 - [ ] Demo video (<=3 min), pitch deck, DoraHacks BUIDL submission.
+
+## Deploy cost model (from live `eth_estimateGas`, Oct 30 2026)
+- Cost ≈ **18 tPOT base + ~0.08 tPOT per creation byte** (unconfirmed; likely a held storage deposit). After shrink: FeedAggregator ~330, KeeperRegistry ~294, DemoVault ~76 tPOT at base fee (~26.1k wei) → total ~700 tPOT.
+- **No EVM transaction exists on the V3 testnet yet.** The explorer shows 1,713 native Substrate extrinsics and zero EVM txs — ours could be the first. `eth_sendRawTransaction` rejects hand-set EVM-scale gas limits (node meters at PolkaVM scale, ~470B gas for a transfer); always use the node's `eth_estimateGas` × 2.
+- Deployer balance 101.9 tPOT is insufficient for even one contract deploy (>70 tPOT for the smallest, DemoVault). Funding requested from the team.
 
 ## Suggested schedule
 - Oct 31: fund deployer, deploy to testnet, first live rounds.

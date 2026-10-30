@@ -41,6 +41,8 @@ contract KeeperRegistry {
     error Inactive();
     error Underfunded();
     error NotJobOwner();
+    error RefundFailed();
+    error PayFailed();
 
     constructor(address oracle_) { oracle = IFeedAggregator(oracle_); }
 
@@ -72,7 +74,7 @@ contract KeeperRegistry {
         j.balance = 0;
         j.active = false;
         (bool ok, ) = j.owner.call{value: refund}("");
-        require(ok, "refund");
+        if (!ok) revert RefundFailed();
         emit JobCancelled(jobId, refund);
     }
 
@@ -108,7 +110,7 @@ contract KeeperRegistry {
 
         (bool success, ) = j.target.call(j.data);
         (bool paid, ) = msg.sender.call{value: j.reward}("");
-        require(paid, "pay");
+        if (!paid) revert PayFailed();
         emit JobExecuted(jobId, msg.sender, success, j.reward);
     }
 

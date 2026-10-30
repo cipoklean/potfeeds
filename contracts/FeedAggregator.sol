@@ -26,7 +26,6 @@ contract FeedAggregator {
 
     address public owner;
     mapping(address => bool) public isFeeder;
-    address[] public feeders;
 
     mapping(bytes32 => Feed) public feeds;
     bytes32[] public feedIds;
@@ -48,6 +47,8 @@ contract FeedAggregator {
     error BadRound();
     error AlreadySubmitted();
     error NoData();
+    error FeedExists();
+    error ZeroQuorum();
 
     modifier onlyOwner() { if (msg.sender != owner) revert NotOwner(); _; }
     modifier onlyFeeder() { if (!isFeeder[msg.sender]) revert NotFeeder(); _; }
@@ -56,10 +57,7 @@ contract FeedAggregator {
 
     // ---------------- admin ----------------
 
-    function transferOwnership(address newOwner) external onlyOwner { owner = newOwner; }
-
     function setFeeder(address feeder, bool allowed) external onlyOwner {
-        if (allowed && !isFeeder[feeder]) feeders.push(feeder);
         isFeeder[feeder] = allowed;
         emit FeederSet(feeder, allowed);
     }
@@ -71,22 +69,17 @@ contract FeedAggregator {
         uint32 heartbeat
     ) external onlyOwner returns (bytes32 feedId) {
         feedId = keccak256(bytes(description));
-        require(bytes(feeds[feedId].description).length == 0, "exists");
-        require(minSubmissions > 0, "quorum");
+        if (bytes(feeds[feedId].description).length != 0) revert FeedExists();
+        if (minSubmissions == 0) revert ZeroQuorum();
         feeds[feedId] = Feed(description, decimals_, minSubmissions, heartbeat, true, 0);
         feedIds.push(feedId);
         emit FeedCreated(feedId, description, decimals_);
     }
 
-    function setFeedActive(bytes32 feedId, bool active) external onlyOwner {
-        if (bytes(feeds[feedId].description).length == 0) revert UnknownFeed();
-        feeds[feedId].active = active;
-    }
-
     /// @notice Owner adjusts the quorum for an existing feed. Never zero.
     function setMinSubmissions(bytes32 feedId, uint8 minSubmissions) external onlyOwner {
         if (bytes(feeds[feedId].description).length == 0) revert UnknownFeed();
-        require(minSubmissions > 0, "quorum");
+        if (minSubmissions == 0) revert ZeroQuorum();
         feeds[feedId].minSubmissions = minSubmissions;
         emit MinSubmissionsSet(feedId, minSubmissions);
     }
@@ -144,19 +137,6 @@ contract FeedAggregator {
         if (f.latestRound == 0) revert NoData();
         return rounds[feedId][f.latestRound].answer;
     }
-
-    function isStale(bytes32 feedId) external view returns (bool) {
-        Feed storage f = feeds[feedId];
-        if (f.latestRound == 0) return true;
-        return block.timestamp - rounds[feedId][f.latestRound].updatedAt > f.heartbeat;
-    }
-
-    function submissionCount(bytes32 feedId, uint80 roundId) external view returns (uint256) {
-        return submissions[feedId][roundId].length;
-    }
-
-    function feedCount() external view returns (uint256) { return feedIds.length; }
-    function feederCount() external view returns (uint256) { return feeders.length; }
 
     // ---------------- internal ----------------
 
