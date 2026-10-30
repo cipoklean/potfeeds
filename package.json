@@ -8,7 +8,8 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "deploy:testnet": "hardhat run scripts/deploy.js --network portaldotTestnet",
-    "deploy:local": "hardhat run scripts/deploy.js --network hardhat",
+    "deploy:local": "hardhat run scripts/deploy.js --network local",
+    "demo:local": "tsx scripts/demo_local.ts",
     "feeder": "tsx agent/src/feeder.ts",
     "keeper": "tsx agent/src/keeper.ts",
     "status": "tsx agent/src/status.ts"

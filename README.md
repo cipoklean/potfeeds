@@ -34,13 +34,36 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ```bash
 npm install
-npm test                  # 7 contract tests on the local Hardhat chain
+npm test                  # 11 contract tests on the local Hardhat chain
 cp .env.example .env      # add a fresh, testnet-only DEPLOYER_KEY
 npm run deploy:testnet    # writes deployments/portaldotTestnet.json
 npm run feeder            # start a feeder agent (add --once for one pass)
 npm run keeper            # start a keeper agent
 npm run status            # print feeds, rounds and jobs
+npm run demo:local        # local end-to-end loop on a throwaway Hardhat node
 ```
+
+## Local end-to-end demo
+
+`npm run demo:local` boots a throwaway Hardhat node on port 18545, deploys all
+three contracts, registers a `PriceBelow` job on DemoVault at 0.1% *above* live
+BTC, then runs one feeder pass and one keeper pass. No testnet funds or `.env`
+needed. It prints the full loop as it happens:
+
+```
+[3/6] live BTC mid=77157.40 (sources: coinbase, kraken, binance, coingecko, bitstamp), threshold=7723455740000 (0.1% above)
+[4/6] [feeder] BTC / USD submit: first round {"mid":77157.4,...}
+[4/6] [feeder] BTC / USD submitted round 1 {"answer":"7715740000000",...}
+       round 1 finalized: answer=77157.4 USD (median), finalized=true
+[5/6] [keeper] executed job 0 {"target":"0x0165...","reward":"500000000000000000",...}
+       keeper balance 10000.0 -> 10000.4998... ETH (reward received)
+       DemoVault: protectedMode=true, triggeredAt=7715740000000 (77157.4 USD)
+```
+
+Details: the feeder uses the real `agent/src/sources.ts` exchange gathers and
+`agent/src/brain.ts` policy to decide; the keeper simulates each job
+(`staticCall`) before executing. The job is `oneShot`, so it fires exactly once
+and the vault ends in `protectedMode`.
 
 ## Portaldot V3 testnet
 
