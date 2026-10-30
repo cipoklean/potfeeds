@@ -1,0 +1,28 @@
+{
+  "name": "potfeeds",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent-operated oracle + keeper network for Portaldot V3",
+  "license": "MIT",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network portaldotTestnet",
+    "deploy:local": "hardhat run scripts/deploy.js --network hardhat",
+    "feeder": "tsx agent/src/feeder.ts",
+    "keeper": "tsx agent/src/keeper.ts",
+    "status": "tsx agent/src/status.ts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.1.2",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "chai": "^4.5.0",
+    "hardhat": "^2.22.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.4"
+  }
+}
