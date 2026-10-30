@@ -39,6 +39,7 @@ contract FeedAggregator {
     event AnswerSubmitted(bytes32 indexed feedId, uint80 indexed roundId, address indexed feeder, int256 answer);
     event RoundFinalized(bytes32 indexed feedId, uint80 indexed roundId, int256 answer, uint256 submissions);
     event FeedPaused(bytes32 indexed feedId, address indexed by, string reason);
+    event MinSubmissionsSet(bytes32 indexed feedId, uint8 minSubmissions);
 
     error NotOwner();
     error NotFeeder();
@@ -80,6 +81,14 @@ contract FeedAggregator {
     function setFeedActive(bytes32 feedId, bool active) external onlyOwner {
         if (bytes(feeds[feedId].description).length == 0) revert UnknownFeed();
         feeds[feedId].active = active;
+    }
+
+    /// @notice Owner adjusts the quorum for an existing feed. Never zero.
+    function setMinSubmissions(bytes32 feedId, uint8 minSubmissions) external onlyOwner {
+        if (bytes(feeds[feedId].description).length == 0) revert UnknownFeed();
+        require(minSubmissions > 0, "quorum");
+        feeds[feedId].minSubmissions = minSubmissions;
+        emit MinSubmissionsSet(feedId, minSubmissions);
     }
 
     /// @notice Any feeder agent can circuit-break a feed when its sources

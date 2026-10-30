@@ -74,6 +74,20 @@ describe("PotFeeds", function () {
     expect(await vault.pokes()).to.equal(2n);
   });
 
+  it("owner can change minSubmissions on an existing feed", async () => {
+    await expect(agg.setMinSubmissions(id(BTC), 5)).to.emit(agg, "MinSubmissionsSet").withArgs(id(BTC), 5);
+    expect((await agg.feeds(id(BTC))).minSubmissions).to.equal(5);
+  });
+
+  it("setMinSubmissions reverts for zero minSubmissions or unknown feed", async () => {
+    await expect(agg.setMinSubmissions(id(BTC), 0)).to.be.revertedWith("quorum");
+    await expect(agg.setMinSubmissions(id("NOPE / USD"), 5)).to.be.revertedWithCustomError(agg, "UnknownFeed");
+  });
+
+  it("non-owner cannot change minSubmissions", async () => {
+    await expect(agg.connect(a).setMinSubmissions(id(BTC), 5)).to.be.revertedWithCustomError(agg, "NotOwner");
+  });
+
   it("owner can cancel and get refund", async () => {
     await reg.registerJob(await vault.getAddress(), "0x", 0, 60, ethers.ZeroHash, 0, 1, false, { value: 10 });
     await expect(reg.connect(a).cancel(0)).to.be.revertedWithCustomError(reg, "NotJobOwner");
