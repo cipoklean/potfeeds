@@ -43,22 +43,23 @@ Read this whole file before touching the repo. It's the single source of truth f
 - `agent/src/` feeder, keeper, brain (policy + optional LLM), sources, status
 - `docs/ARCHITECTURE.md`
 
-## Current status (Oct 30, 2026)
+## Current status (Oct 31, 2026)
 - [x] Idea chosen, research done (no other oracle or keeper project among ~67 builds).
 - [x] Contracts + tests (**11 passing locally**), feeder/keeper agents, live source fetch verified (BTC from Coinbase, Kraken, CoinGecko, Bitstamp; Binance may be geo-blocked).
 - [x] Bytecode shrink: optimizer runs 1 + viaIR on, leftover require strings swapped for custom errors, unused aggregator views dropped, owner-only setFeedActive restored (FeedAggregator 6221 → 4176 creation bytes; KeeperRegistry 4616 → 3674; DemoVault 916 → 958; all 11 tests pass).
-- [ ] Fund a fresh EVM deployer key with tPOT (see funding step) — **in progress: asked team for more tPOT; do not deploy until funded**.
-- [ ] `npm run deploy:testnet`, then paste addresses + tx hashes into README.
+- [x] Deployer funded (1,101.89 tPOT) **and deployed live** on the V3 testnet (2026-10-31, QUORUM=1, BTC/ETH/DOT). Actual spend ≈ 746.4 tPOT (1,101.89 → 355.47) at base fee ≈ 26k wei — under the 1,050 gate.
+- [x] `npm run deploy:testnet` done; addresses + deploy tx hashes + explorer links pasted into README (and `deployments/testnet.json`). Deploy txs (all status 1): FeedAggregator `0x5b4e6ae0...`, KeeperRegistry `0xc30a5aad...`, DemoVault `0x00b0b924...`.
+- [x] `setMinSubmissions` = 1 for BTC/ETH/DOT (owner-only on-chain call, no redeploy — round finalization needs just 1 submission).
 - [ ] Run 3 feeder agents with 3 different keys (`EXTRA_FEEDERS` at deploy, then `QUORUM=3`), or redeploy with quorum 3.
-- [ ] Register a PriceBelow job on DemoVault + an Interval job; run keeper; capture tx hashes.
-- [ ] Run feeder + keeper as systemd user services on the Oracle Cloud ARM VM (Hermes host).
-- [ ] Small dashboard page (optional): feeds, rounds, agent decisions, keeper runs.
+- [ ] Register a PriceBelow job on DemoVault + an Interval job; run keeper; capture tx hashes. **Partial: PriceBelow job 0 registered on KeeperRegistry (tx `0x2f09075d...`, threshold 0.1% above live BTC). Finalized round + keeper execution pending testnet liveness — the chain has produced no block since 09:27 UTC (latest block 265065), so feeder submits are being rejected at the node ("Priority is too low") and evidence capture is blocked until blocks resume.**
+- [ ] Run feeder + keeper as systemd user services on the Oracle Cloud ARM VM (Hermes host). Units written + linked; they exit 1 until the node accepts txs again.
+- [x] Small dashboard page (optional): feeds, rounds, agent decisions, keeper runs — status page ships.
 - [ ] Demo video (<=3 min), pitch deck, DoraHacks BUIDL submission.
 
 ## Deploy cost model (from live `eth_estimateGas`, Oct 30 2026)
-- Cost ≈ **18 tPOT base + ~0.08 tPOT per creation byte** (unconfirmed; likely a held storage deposit). After shrink + unpause fix: FeedAggregator ~345, KeeperRegistry ~294, DemoVault ~76 tPOT at base fee (~26.1k wei) → total ~715 tPOT.
-- **No EVM transaction exists on the V3 testnet yet.** The explorer shows 1,713 native Substrate extrinsics and zero EVM txs — ours could be the first. `eth_sendRawTransaction` rejects hand-set EVM-scale gas limits (node meters at PolkaVM scale, ~470B gas for a transfer); always use the node's `eth_estimateGas` × 2.
-- Deployer balance 101.9 tPOT is insufficient for even one contract deploy (>70 tPOT for the smallest, DemoVault). Funding requested from the team.
+- Cost ≈ **18 tPOT base + ~0.08 tPOT per creation byte** (unconfirmed; likely a held storage deposit). After shrink + unpause fix: FeedAggregator ~345, KeeperRegistry ~294, DemoVault ~76 tPOT at base fee (~26.1k wei) → total ~715 tPOT. **Actual spend ≈ 746.4 tPOT** (at base fee ≈ 26k wei).
+- **Our deploy txs are the first EVM transactions on the V3 testnet.** Gas metering is PolkaVM-scale (~470B gas for a transfer); always hand the node its own `eth_estimateGas` × 2 rather than EVM-scale limits.
+- **Known testnet quirk (2026-10-31):** after our deploy, the chain stopped producing blocks (latest block 265065 at 09:27 UTC) and `eth_sendRawTransaction` rejects all new txs with `1014 Priority is too low` regardless of fee/type — this is a node/liveness issue, not a tx-shape bug. Watch for block production to resume, then re-run the feeder/keeper captures.
 
 ## Suggested schedule
 - Oct 31: fund deployer, deploy to testnet, first live rounds.

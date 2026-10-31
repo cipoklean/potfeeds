@@ -99,13 +99,25 @@ To fund a MetaMask (EVM) account from a SubWallet (native) account, run `node sc
 
 ## Deployed contracts (testnet)
 
-_Filled after the first deploy, from `deployments/portaldotTestnet.json`._
+Deployed 2026-10-31 from `deployments/testnet.json` (also kept as
+`deployments/portaldotTestnet.json`). QUORUM=1, feeds BTC/ETH/DOT.
 
-| Contract | Address | Deploy tx |
-|---|---|---|
-| FeedAggregator | - | - |
-| KeeperRegistry | - | - |
-| DemoVault | - | - |
+| Contract | Address | Deploy tx | Explorer |
+|---|---|---|---|
+| FeedAggregator | `0x9b29Fe91ABE65846F0EeFf3989b9C8a496E2260B` | `0x5b4e6ae0...` | [tx](https://scanner-testnet-v3.portaldot.dev/tx/0x5b4e6ae0eda380baba379f75eeb9c4b331e90d3a6acb050dc7fa18556633755b) |
+| KeeperRegistry | `0xb03395BcC85C921c4CEEF26C771Edb36FF6738C4` | `0xc30a5aad...` | [tx](https://scanner-testnet-v3.portaldot.dev/tx/0xc30a5aade915683018175488281b5d75350838529c4870fe4a35ead5789b7352) |
+| DemoVault | `0xF1E1Db70Af29f78B79F56135685b2De15147cC8A` | `0x00b0b924...` | [tx](https://scanner-testnet-v3.portaldot.dev/tx/0x00b0b9242952df7c3e42c2c836b69b3cefde02d051249e9721858d7f903a58c7) |
+
+Also live on testnet:
+- `setMinSubmissions` set to 1 for BTC/ETH/DOT (one feeder today; owner-only
+  on-chain call, no redeploy — round finalization needs just 1 submission).
+- Demo `PriceBelow` job registered on KeeperRegistry (job 0, threshold 0.1%
+  above live BTC, `oneShot`) — tx `0x2f09075d...`.
+
+Full deploy tx hashes:
+- FeedAggregator `0x5b4e6ae0eda380baba379f75eeb9c4b331e90d3a6acb050dc7fa18556633755b`
+- KeeperRegistry `0xc30a5aade915683018175488281b5d75350838529c4870fe4a35ead5789b7352`
+- DemoVault `0x00b0b9242952df7c3e42c2c836b69b3cefde02d051249e9721858d7f903a58c7`
 
 ## Roadmap to mainnet
 

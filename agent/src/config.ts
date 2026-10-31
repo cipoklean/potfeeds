@@ -9,12 +9,18 @@ function deployments(): Record<string, any> {
 }
 const d = deployments();
 
+// treat the .env.example placeholder as absent so DEPLOYER_KEY is the fallback
+function key(name: string): string | undefined {
+  const v = process.env[name];
+  return v && v !== "0x..." ? v : undefined;
+}
+
 export const cfg = {
   rpc: process.env.PORTALDOT_RPC || "https://test-evm-rpc-v3.portaldot.dev",
   aggregator: process.env.AGGREGATOR_ADDRESS || d.FeedAggregator?.address,
   registry: process.env.KEEPER_REGISTRY_ADDRESS || d.KeeperRegistry?.address,
-  feederKey: process.env.FEEDER_KEY || process.env.DEPLOYER_KEY,
-  keeperKey: process.env.KEEPER_KEY || process.env.DEPLOYER_KEY,
+  feederKey: key("FEEDER_KEY") || key("DEPLOYER_KEY"),
+  keeperKey: key("KEEPER_KEY") || key("DEPLOYER_KEY"),
   feeds: (process.env.FEEDS || "BTC / USD,ETH / USD,DOT / USD").split(",").map((s) => s.trim()),
   deviationBps: Number(process.env.DEVIATION_BPS || 50),
   heartbeatSec: Number(process.env.HEARTBEAT_SEC || 600),

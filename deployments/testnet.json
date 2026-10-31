@@ -1,0 +1,23 @@
+{
+  "network": "portaldotTestnet",
+  "chainId": 420420777,
+  "deployer": "0x51b0228bd9B8BF78CEDB11Cb485BA9F80cCf4655",
+  "FeedAggregator": {
+    "address": "0x9b29Fe91ABE65846F0EeFf3989b9C8a496E2260B",
+    "tx": "0x5b4e6ae0eda380baba379f75eeb9c4b331e90d3a6acb050dc7fa18556633755b"
+  },
+  "KeeperRegistry": {
+    "address": "0xb03395BcC85C921c4CEEF26C771Edb36FF6738C4",
+    "tx": "0xc30a5aade915683018175488281b5d75350838529c4870fe4a35ead5789b7352"
+  },
+  "DemoVault": {
+    "address": "0xF1E1Db70Af29f78B79F56135685b2De15147cC8A",
+    "tx": "0x00b0b9242952df7c3e42c2c836b69b3cefde02d051249e9721858d7f903a58c7"
+  },
+  "feeds": {
+    "BTC / USD": "0x0e3e290fbc572c3c2d1656bd757b05413d2fc62474d95064641dcabee325eb93",
+    "ETH / USD": "0x62ddc8c5ffbd077b5a28e92efd10abcc58e66fb2a326401f0efd02e173ac1777",
+    "DOT / USD": "0x6b528f89a8d5f5929b1ba136f8a5d616b8abf6090ce97e56e85bd4aaff5c2844"
+  },
+  "deployedAt": "2026-10-31T09:27:01.449Z"
+}
