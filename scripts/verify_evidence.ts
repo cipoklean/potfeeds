@@ -44,7 +44,7 @@ async function main() {
 
   // 1. Feeder submit txs mined + correct feed + finalized round on-chain
   for (const f of cap.feeds ?? []) {
-    const feedId = ethers.keccak256(ethers.toUtf8Bytes(f.feed));
+    const feedId = f.feedId ?? ethers.keccak256(ethers.toUtf8Bytes(f.feed));
     const rc = await provider.getTransactionReceipt(f.submitTx);
     if (!rc || rc.status !== 1) failures.push(`${f.feed}: submit tx not mined/status!=1`);
 
@@ -58,12 +58,13 @@ async function main() {
     console.log(`OK ${f.feed}: round ${feed.latestRound} finalized, answer ${round.answer}`);
   }
 
-  // 2. Keeper execution tx mined + job done
+  // 2. Keeper execution tx mined + job executed
   const krc = await provider.getTransactionReceipt(cap.keeperExecTx);
   if (!krc || krc.status !== 1) failures.push("keeper exec tx not mined/status!=1");
   const job = await reg.jobs(0n);
-  if (!job.done) failures.push("job 0 not marked done");
-  console.log(`OK keeper: job done=${job.done}, executedAt=${job.executedAt}, by=${job.executedBy}`);
+  if (job.lastRun === 0n) failures.push("job 0 never executed (lastRun==0)");
+  if (job.active) failures.push("job 0 still active (expected oneShot deactivation)");
+  console.log(`OK keeper: job lastRun=${job.lastRun}, active=${job.active}, balance=${job.balance}`);
 
   // 3. DemoVault protectedMode + triggeredAt
   const pm = await vault.protectedMode();

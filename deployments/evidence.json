@@ -13,20 +13,26 @@
     "feeds": [
       {
         "feed": "BTC/USD",
+        "description": "BTC / USD",
+        "feedId": "0x0e3e290fbc572c3c2d1656bd757b05413d2fc62474d95064641dcabee325eb93",
         "submitTx": "0x4b45c7384b3d930e19d34f807dc1a1f57da557e3a6332d597cf3718551b72791",
         "answer": "7736909000000",
         "finalizedAnswer": "77369.09"
       },
       {
         "feed": "ETH/USD",
+        "description": "ETH / USD",
+        "feedId": "0x62ddc8c5ffbd077b5a28e92efd10abcc58e66fb2a326401f0efd02e173ac1777",
         "submitTx": "0x4206fa071d6bf4c6e8e7483534afc2797bf11b9bb104e08e7666836e371356af",
-        "answer": "22457900000000",
+        "answer": "224579000000",
         "finalizedAnswer": "2245.79"
       },
       {
         "feed": "DOT/USD",
+        "description": "DOT / USD",
+        "feedId": "0x6b528f89a8d5f5929b1ba136f8a5d616b8abf6090ce97e56e85bd4aaff5c2844",
         "submitTx": "0xa6d0a05c92a265a48312b5a6b1f739399b3b0286402a730f278bfd1d96a0e4ae",
-        "answer": "95180000000",
+        "answer": "95180000",
         "finalizedAnswer": "0.9518"
       }
     ],
