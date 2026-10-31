@@ -7,5 +7,32 @@
   "rewardTPot": "0.5",
   "target": "0xF1E1Db70Af29f78B79F56135685b2De15147cC8A",
   "data": "0xbdeb591c",
-  "registeredAt": "2026-10-31T09:27:26.520Z"
+  "registeredAt": "2026-10-31T09:27:26.520Z",
+  "capture": {
+    "capturedAt": "2026-10-31T10:30:00.000Z",
+    "feeds": [
+      {
+        "feed": "BTC/USD",
+        "submitTx": "0x4b45c7384b3d930e19d34f807dc1a1f57da557e3a6332d597cf3718551b72791",
+        "answer": "7736909000000",
+        "finalizedAnswer": "77369.09"
+      },
+      {
+        "feed": "ETH/USD",
+        "submitTx": "0x4206fa071d6bf4c6e8e7483534afc2797bf11b9bb104e08e7666836e371356af",
+        "answer": "22457900000000",
+        "finalizedAnswer": "2245.79"
+      },
+      {
+        "feed": "DOT/USD",
+        "submitTx": "0xa6d0a05c92a265a48312b5a6b1f739399b3b0286402a730f278bfd1d96a0e4ae",
+        "answer": "95180000000",
+        "finalizedAnswer": "0.9518"
+      }
+    ],
+    "keeperExecTx": "0x14b74da65d0cb0dcff5a1d38730bcee27ac7ff60d3e08f6a6ec3ea35e869292d",
+    "keeperJobId": 0,
+    "vaultProtectedMode": true,
+    "vaultTriggeredAt": "7736909000000"
+  }
 }
