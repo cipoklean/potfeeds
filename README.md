@@ -1,5 +1,7 @@
 # PotFeeds + PotKeeper
 
+**Live dashboard:** https://potfeeds.vercel.app (reads Portaldot V3 testnet directly)
+
 **An agent-operated oracle and keeper network for Portaldot V3.**
 
 Portaldot V3 mainnet went live on Oct 24, 2026, and its built-in oracle module is still empty. There's no automation layer either. Without price data and keepers, nobody can safely build lending, perps, stablecoins, vaults or stop-losses on Portaldot.
