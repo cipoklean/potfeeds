@@ -3,40 +3,261 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PotFeeds status</title>
+<title>PotFeeds · Agent Oracle & Keeper Network on Portaldot</title>
+<meta name="description" content="Live dashboard for PotFeeds + PotKeeper: AI agents that bring real-world prices onto Portaldot and automatically act on them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
 <style>
-  body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0; background: #0f1115; color: #e6e6e6; }
-  .wrap { max-width: 860px; margin: 0 auto; padding: 24px; }
-  h1 { font-size: 20px; color: #fff; margin: 0 0 4px; }
-  .sub { color: #8a8f98; font-size: 13px; margin-bottom: 20px; }
-  h2 { font-size: 14px; color: #9aa0aa; text-transform: uppercase; letter-spacing: .08em; margin: 28px 0 10px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; color: #8a8f98; font-weight: 500; padding: 6px 10px; border-bottom: 1px solid #262a31; }
-  td { padding: 6px 10px; border-bottom: 1px solid #1c1f26; }
-  .pill { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 12px; }
-  .yes { background: #0f2e22; color: #4ade80; }
-  .no { background: #331616; color: #f87171; }
-  .muted { color: #6b7078; }
-  #fatal { color: #f87171; }
+:root{
+  --bg:#070b14; --panel:#0e1524; --panel2:#121b2e; --line:#1e2a42; --text:#e8edf7; --muted:#8a96ad; --dim:#5d6a82;
+  --pink:#ff4fa3; --violet:#8b6cff; --green:#34d399; --amber:#fbbf24; --red:#f87171; --blue:#60a5fa;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1200px 600px at 10% -10%,rgba(139,108,255,.18),transparent 60%),radial-gradient(900px 500px at 100% 0%,rgba(255,79,163,.12),transparent 60%),var(--bg)}
+a{color:inherit}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+
+/* header */
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--pink),var(--violet));display:grid;place-items:center;font-weight:800;font-size:20px;box-shadow:0 8px 30px rgba(255,79,163,.35)}
+.brand h1{font-size:20px;margin:0;letter-spacing:-.01em}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.netbar{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--line);background:rgba(14,21,36,.7);border-radius:999px;font-size:12.5px;color:var(--muted)}
+.chip b{color:var(--text);font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.dot.live{background:var(--green);box-shadow:0 0 0 0 rgba(52,211,153,.7);animation:pulse 1.8s infinite}
+.dot.warn{background:var(--amber)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,.6)}70%{box-shadow:0 0 0 8px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+
+/* hero */
+.hero{margin:30px 0 22px;display:grid;grid-template-columns:1.25fr 1fr;gap:20px}
+.hero h2{font-size:34px;line-height:1.12;margin:0 0 12px;letter-spacing:-.02em}
+.hero h2 span{background:linear-gradient(90deg,var(--pink),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--muted);font-size:15.5px;line-height:1.6;margin:0}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+.stat .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.stat .v{font-size:26px;font-weight:700;margin-top:6px}
+.stat .s{color:var(--dim);font-size:12px;margin-top:4px}
+
+.banner{display:none;margin:0 0 18px;padding:12px 16px;border-radius:12px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.08);color:#fde68a;font-size:13.5px}
+
+/* section */
+section{margin-top:26px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.sh h3{margin:0;font-size:17px;letter-spacing:-.01em}
+.sh p{margin:0;color:var(--muted);font-size:13px}
+
+/* flow */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;position:relative}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;position:relative;transition:.3s}
+.step .n{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-weight:700;font-size:13px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+.step h4{margin:12px 0 6px;font-size:14.5px}
+.step p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.step .st{margin-top:12px;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px}
+.step.done{border-color:rgba(52,211,153,.4);background:linear-gradient(180deg,rgba(52,211,153,.07),var(--panel))}
+.step.done .n{background:var(--green);color:#052e1f;border-color:transparent}
+.step.done .st{color:var(--green)}
+.step:not(:last-child)::after{content:"→";position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:16px;z-index:2}
+
+/* price cards */
+.prices{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.pc{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;position:relative;overflow:hidden}
+.pc .top{display:flex;align-items:center;justify-content:space-between}
+.asset{display:flex;align-items:center;gap:10px}
+.ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px}
+.ic.btc{background:rgba(247,147,26,.15);color:#f7931a}
+.ic.eth{background:rgba(98,126,234,.18);color:#8ea2f3}
+.ic.dot{background:rgba(230,0,122,.15);color:#ff4fa3}
+.asset b{font-size:15px}
+.asset small{display:block;color:var(--muted);font-size:12px}
+.pill{font-size:11.5px;padding:4px 10px;border-radius:999px;font-weight:600}
+.pill.ok{background:rgba(52,211,153,.12);color:var(--green)}
+.pill.wait{background:rgba(251,191,36,.12);color:var(--amber)}
+.pill.off{background:rgba(248,113,113,.12);color:var(--red)}
+.price{font-size:32px;font-weight:800;margin:16px 0 4px;letter-spacing:-.02em}
+.mkt{color:var(--muted);font-size:12.5px;min-height:18px}
+.mkt .up{color:var(--green)} .mkt .dn{color:var(--red)}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.meta div{font-size:12px;color:var(--dim)}
+.meta div b{display:block;color:var(--text);font-weight:500;font-size:13px;margin-top:2px}
+.pc a.tx{display:inline-block;margin-top:12px;font-size:12px;color:var(--blue);text-decoration:none}
+.pc a.tx:hover{text-decoration:underline}
+
+/* two col */
+.two{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}
+
+.job{display:flex;flex-direction:column;gap:12px}
+.rule{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:15px;line-height:1.5}
+.rule .if{color:var(--amber);font-weight:700}
+.rule .then{color:var(--violet);font-weight:700}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kv div{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--dim)}
+.kv div b{display:block;color:var(--text);font-size:14px;margin-top:3px;font-weight:600}
+.bar{height:8px;background:var(--panel2);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--amber));width:0;transition:width .6s}
+.barlbl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+
+.vault{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:10px 0}
+.shield{width:96px;height:96px;border-radius:28px;display:grid;place-items:center;font-size:44px;background:var(--panel2);border:1px solid var(--line);transition:.4s}
+.shield.on{background:linear-gradient(135deg,rgba(52,211,153,.25),rgba(52,211,153,.05));border-color:rgba(52,211,153,.5);box-shadow:0 10px 40px rgba(52,211,153,.2)}
+.vault h4{margin:4px 0 0;font-size:20px}
+.vault p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.5;max-width:340px}
+
+/* timeline */
+.tl{display:flex;flex-direction:column}
+.ev{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line)}
+.ev:last-child{border-bottom:0}
+.ev .e{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:16px;background:var(--panel2);border:1px solid var(--line)}
+.ev .t{font-size:14px}
+.ev .t small{display:block;color:var(--dim);font-size:12px;margin-top:2px}
+.ev a{font-size:12px;color:var(--blue);text-decoration:none;white-space:nowrap}
+.empty{color:var(--dim);font-size:13px;padding:10px 4px}
+
+/* contracts */
+.ctr{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ctr .card h4{margin:0 0 4px;font-size:14px}
+.ctr .card p{margin:0 0 10px;color:var(--muted);font-size:12.5px;line-height:1.5}
+.addr{font-size:12px;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;display:block;text-decoration:none;word-break:break-all}
+.addr:hover{border-color:var(--violet)}
+
+footer{margin-top:36px;color:var(--dim);font-size:12.5px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+footer a{color:var(--muted)}
+
+@media (max-width:900px){
+  .hero,.two{grid-template-columns:1fr}
+  .flow{grid-template-columns:1fr 1fr}
+  .step:nth-child(2)::after{display:none}
+  .prices,.ctr{grid-template-columns:1fr}
+  .hero h2{font-size:27px}
+}
+@media (max-width:520px){.flow{grid-template-columns:1fr}.step::after{display:none}.kv{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>PotFeeds · read-only status</h1>
-  <div class="sub" id="net">loading…</div>
 
-  <h2>Feeds / latest rounds</h2>
-  <table id="feeds"><tbody><tr><td class="muted">loading…</td></tr></tbody></table>
+<header>
+  <div class="brand">
+    <div class="logo">P</div>
+    <div><h1>PotFeeds <span style="color:var(--muted);font-weight:500">+ PotKeeper</span></h1><p>Agent-run oracle &amp; automation network for Portaldot</p></div>
+  </div>
+  <div class="netbar">
+    <span class="chip"><span class="dot" id="netDot"></span><span id="netTxt">Connecting…</span></span>
+    <span class="chip">Block <b class="mono" id="blk">–</b></span>
+    <span class="chip">Portaldot V3 Testnet · <b class="mono">420420777</b></span>
+  </div>
+</header>
 
-  <h2>Recent keeper runs (JobExecuted)</h2>
-  <table id="runs"><tbody><tr><td class="muted">loading…</td></tr></tbody></table>
-
-  <div id="fatal" hidden></div>
+<div class="hero">
+  <div>
+    <h2>AI agents that bring <span>real-world prices</span> onto Portaldot, and act on them automatically.</h2>
+    <p>Smart contracts can't see the outside world, and they can't wake themselves up. <b>PotFeeds</b> agents check prices on four exchanges and post an agreed price on-chain. <b>PotKeeper</b> agents watch for conditions apps care about, like "BTC fell below $77k", then trigger the action and get paid for it.</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="k">Price feeds</div><div class="v" id="sFeeds">3</div><div class="s">BTC · ETH · DOT, 8 decimals</div></div>
+    <div class="stat"><div class="k">Data sources</div><div class="v">4</div><div class="s">Coinbase · Kraken · CoinGecko · Bitstamp</div></div>
+    <div class="stat"><div class="k">Keeper jobs run</div><div class="v" id="sRuns">–</div><div class="s" id="sRunsS">on-chain executions</div></div>
+    <div class="stat"><div class="k">Rewards paid</div><div class="v" id="sPaid">–</div><div class="s">tPOT to keeper agents</div></div>
+  </div>
 </div>
+
+<div class="banner" id="banner"></div>
+
+<section>
+  <div class="sh"><h3>How it works</h3><p>Each step turns green when it has happened on-chain</p></div>
+  <div class="flow">
+    <div class="step" id="f1"><div class="n">1</div><h4>Agents fetch prices</h4><p>The feeder agent pulls live prices from 4 exchanges and takes the middle value, so one bad source can't skew it.</p><div class="st" id="f1s">Waiting</div></div>
+    <div class="step" id="f2"><div class="n">2</div><h4>Price agreed on-chain</h4><p>Submissions go to the FeedAggregator. Once quorum is reached the round is <b>finalized</b> and any app can read it.</p><div class="st" id="f2s">Waiting</div></div>
+    <div class="step" id="f3"><div class="n">3</div><h4>Keeper spots a trigger</h4><p>The keeper agent checks every registered job. When a condition comes true it calls <b>execute</b> on the KeeperRegistry.</p><div class="st" id="f3s">Waiting</div></div>
+    <div class="step" id="f4"><div class="n">4</div><h4>App protected, keeper paid</h4><p>The target app runs its action (here: the vault enters protected mode) and the keeper collects its reward.</p><div class="st" id="f4s">Waiting</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><h3>Live price feeds</h3><p>On-chain answer vs. market price right now</p></div>
+  <div class="prices" id="prices"></div>
+</section>
+
+<section>
+  <div class="two">
+    <div class="card">
+      <div class="sh"><h3>Keeper job #0 · stop-loss</h3><span class="pill wait" id="jobPill">Loading</span></div>
+      <div class="job">
+        <div class="rule"><span class="if">IF</span> BTC / USD falls below <b class="mono" id="jThr">–</b><br><span class="then">THEN</span> call <span class="mono">enterProtectedMode()</span> on DemoVault and pay the keeper <b id="jRew">–</b></div>
+        <div class="kv">
+          <div>Trigger<b id="jTrig">Price below</b></div>
+          <div>Type<b id="jOne">One-shot</b></div>
+          <div>Reward left<b id="jBal">–</b></div>
+        </div>
+        <div>
+          <div class="bar"><i id="jBar"></i></div>
+          <div class="barlbl"><span>On-chain BTC <b class="mono" id="jNow">–</b></span><span id="jGap">–</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="sh"><h3>DemoVault</h3><span class="pill wait" id="vPill">Loading</span></div>
+      <div class="vault">
+        <div class="shield" id="shield">🛡️</div>
+        <h4 id="vTitle">Checking…</h4>
+        <p id="vText">A sample app that uses PotFeeds. When BTC drops below its line, a keeper switches it to protected mode, with no human involved.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="card">
+    <div class="sh"><h3>On-chain activity</h3><p>Price rounds and keeper runs, newest first</p></div>
+    <div class="tl" id="tl"><div class="empty">Loading events…</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><h3>Contracts</h3><p>Deployed on Portaldot V3 testnet · tap to open in the explorer</p></div>
+  <div class="ctr">
+    <div class="card"><h4>FeedAggregator</h4><p>Stores price rounds, takes the median of feeder submissions, finalizes at quorum.</p><a class="addr mono" id="cAgg" target="_blank" rel="noopener"></a></div>
+    <div class="card"><h4>KeeperRegistry</h4><p>Apps register and fund jobs. Keepers execute ready jobs and earn the reward.</p><a class="addr mono" id="cReg" target="_blank" rel="noopener"></a></div>
+    <div class="card"><h4>DemoVault</h4><p>Example consumer: a stop-loss switch flipped by a keeper using the PotFeeds price.</p><a class="addr mono" id="cVault" target="_blank" rel="noopener"></a></div>
+  </div>
+</section>
+
+<footer>
+  <span>Read-only dashboard · reads directly from the chain, refreshes every 15s · <span id="upd">–</span></span>
+  <span><a href="https://github.com/cipoklean/potfeeds" target="_blank" rel="noopener">GitHub</a> · <a href="https://scanner-testnet-v3.portaldot.dev/" target="_blank" rel="noopener">Explorer</a> · Built by cipoklean for Portaldot Hacker House 2026</span>
+</footer>
+</div>
+
 <script>
 "use strict";
-const FEED_NAMES = ["BTC / USD", "ETH / USD", "DOT / USD"];
+const RPC = new URLSearchParams(location.search).get("rpc") || "https://test-evm-rpc-v3.portaldot.dev";
+const EXPLORER = "https://scanner-testnet-v3.portaldot.dev";
+const DEPLOY_BLOCK = 265040;
+const ADDR = {
+  agg: "0x9b29Fe91ABE65846F0EeFf3989b9C8a496E2260B",
+  reg: "0xb03395BcC85C921c4CEEF26C771Edb36FF6738C4",
+  vault: "0xF1E1Db70Af29f78B79F56135685b2De15147cC8A",
+};
+const FEEDS = [
+  { key:"btc", name:"Bitcoin", pair:"BTC / USD", id:"0x0e3e290fbc572c3c2d1656bd757b05413d2fc62474d95064641dcabee325eb93", cg:"bitcoin", sym:"₿" },
+  { key:"eth", name:"Ethereum", pair:"ETH / USD", id:"0x62ddc8c5ffbd077b5a28e92efd10abcc58e66fb2a326401f0efd02e173ac1777", cg:"ethereum", sym:"Ξ" },
+  { key:"dot", name:"Polkadot", pair:"DOT / USD", id:"0x6b528f89a8d5f5929b1ba136f8a5d616b8abf6090ce97e56e85bd4aaff5c2844", cg:"polkadot", sym:"●" },
+];
+// Last verified snapshot (deployments/evidence.json), shown if the RPC is unreachable.
+const SNAPSHOT = {
+  feeds: { btc:{answer:77369.09,round:1,tx:"0x4b45c7384b3d930e19d34f807dc1a1f57da557e3a6332d597cf3718551b72791"},
+           eth:{answer:2245.79,round:1,tx:"0x4206fa071d6bf4c6e8e7483534afc2797bf11b9bb104e08e7666836e371356af"},
+           dot:{answer:0.9518,round:1,tx:"0xa6d0a05c92a265a48312b5a6b1f739399b3b0286402a730f278bfd1d96a0e4ae"} },
+  keeperTx:"0x14b74da65d0cb0dcff5a1d38730bcee27ac7ff60d3e08f6a6ec3ea35e869292d",
+  threshold:77381.539235, reward:0.5, protected:true, triggeredAt:77369.09,
+};
 const AGG_ABI = [
   "function feeds(bytes32) view returns (string description,uint8 decimals,uint8 minSubmissions,uint32 heartbeat,bool active,uint80 latestRound)",
   "function rounds(bytes32,uint80) view returns (int256 answer,uint64 startedAt,uint64 updatedAt,bool finalized)",
@@ -47,87 +268,175 @@ const REG_ABI = [
   "function jobs(uint256) view returns (address owner,address target,bytes data,uint8 trigger,uint64 interval,uint64 lastRun,bytes32 feedId,int256 threshold,uint256 reward,uint256 balance,bool active,bool oneShot)",
   "event JobExecuted(uint256 indexed jobId,address indexed keeper,bool success,uint256 reward)",
 ];
-const DEFAULT_RPC = "https://test-evm-rpc-v3.portaldot.dev";
-const DEFAULT_NETWORK = "portaldotTestnet";
-const RUNS_BLOCKS = 20000;
+const VAULT_ABI = [
+  "function protectedMode() view returns (bool)",
+  "function triggeredAt() view returns (int256)",
+  "event ProtectedModeOn(int256 price)",
+];
+const $ = (id) => document.getElementById(id);
+const short = (a) => a.slice(0, 8) + "…" + a.slice(-6);
+const usd = (n) => n >= 100 ? "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})
+                            : "$" + n.toLocaleString("en-US",{minimumFractionDigits:4,maximumFractionDigits:4});
+const ago = (s) => { const d = Math.max(0, Date.now()/1000 - s); if (d < 90) return Math.round(d)+"s ago"; if (d < 5400) return Math.round(d/60)+" min ago"; if (d < 172800) return Math.round(d/3600)+" h ago"; return Math.round(d/86400)+" days ago"; };
+const txLink = (h, label) => `<a href="${EXPLORER}/tx/${h}" target="_blank" rel="noopener">${label || "View tx ↗"}</a>`;
 
-async function main() {
-  const params = new URLSearchParams(location.search);
-  const rpc = params.get("rpc") || DEFAULT_RPC;
-  const network = params.get("network") || DEFAULT_NETWORK;
+for (const [k, el] of [["agg","cAgg"],["reg","cReg"],["vault","cVault"]]) { $(el).textContent = ADDR[k]; $(el).href = `${EXPLORER}/address/${ADDR[k]}`; }
 
-  let dep = null;
-  for (const base of ["../deployments/", "deployments/"]) {
-    try {
-      const r = await fetch(`${base}${network}.json`);
-      if (r.ok) { dep = await r.json(); break; }
-    } catch { /* try next */ }
-  }
+const provider = new ethers.JsonRpcProvider(RPC, 420420777, { staticNetwork: true });
+const agg = new ethers.Contract(ADDR.agg, AGG_ABI, provider);
+const reg = new ethers.Contract(ADDR.reg, REG_ABI, provider);
+const vault = new ethers.Contract(ADDR.vault, VAULT_ABI, provider);
+let market = {};
+let eventsCache = null, eventsAt = 0;
 
-  document.getElementById("net").textContent =
-    (dep ? `deployed@${network}` : `${network} (not deployed yet)`) + ` · ${rpc} · read-only`;
+function setStep(n, done, text) { $("f"+n).classList.toggle("done", done); $("f"+n+"s").textContent = (done ? "✓ " : "") + text; }
 
-  if (!dep) {
-    document.querySelector("#feeds tbody").innerHTML =
-      '<tr><td class="muted">No deployments found — run <code>npm run deploy:testnet</code> first.</td></tr>';
-    document.querySelector("#runs tbody").innerHTML =
-      '<tr><td class="muted">n/a</td></tr>';
-    return;
-  }
-
-  const provider = new ethers.JsonRpcProvider(rpc);
-  const agg = new ethers.Contract(dep.FeedAggregator.address, AGG_ABI, provider);
-  const reg = new ethers.Contract(dep.KeeperRegistry.address, REG_ABI, provider);
-
-  // feeds
-  const rows = [];
-  for (const name of FEED_NAMES) {
-    const id = ethers.keccak256(ethers.toUtf8Bytes(name));
-    const f = await agg.feeds(id);
-    let ans = "-", updated = "-";
-    if (f.latestRound > 0n) {
-      const r = await agg.rounds(id, f.latestRound);
-      ans = (Number(r.answer) / 10 ** Number(f.decimals)).toFixed(Number(f.decimals)).replace(/0+$/,"").replace(/\.$/,"");
-      updated = new Date(Number(r.updatedAt) * 1000).toISOString().slice(0, 19).replace("T", " ");
-    }
-    rows.push(`<tr>
-      <td>${name}</td>
-      <td><span class="pill ${f.active ? "yes" : "no"}">${f.active ? "active" : "paused"}</span></td>
-      <td>round ${f.latestRound.toString()}</td>
-      <td>${ans}</td>
-      <td class="muted">quorum ${f.minSubmissions} · heartbeat ${f.heartbeat}s</td>
-      <td class="muted">${updated}</td>
-    </tr>`);
-  }
-  document.querySelector("#feeds tbody").innerHTML = rows.join("");
-
-  // recent keeper runs
-  const latest = await provider.getBlockNumber();
-  const from = Math.max(0, latest - RUNS_BLOCKS);
-  const events = await reg.queryFilter(reg.filters.JobExecuted(), from, latest);
-  events.reverse();
-  const runRows = events.slice(0, 30).map((e) => {
-    const jid = e.args[0].toString();
-    const ok = e.args[2];
-    const reward = ethers.formatEther(e.args[3]);
-    return `<tr>
-      <td>job #${jid}</td>
-      <td class="muted">${e.args[1].slice(0, 10)}…${e.args[1].slice(-6)}</td>
-      <td><span class="pill ${ok ? "yes" : "no"}">${ok ? "success" : "failed"}</span></td>
-      <td>${reward} tPOT</td>
-      <td class="muted">block ${e.blockNumber}</td>
-    </tr>`;
-  });
-  document.querySelector("#runs tbody").innerHTML = runRows.length
-    ? runRows.join("")
-    : '<tr><td class="muted">no JobExecuted events in last ' + RUNS_BLOCKS + ' blocks</td></tr>';
+function renderPrices(data) {
+  $("prices").innerHTML = FEEDS.map((f) => {
+    const d = data[f.key] || {};
+    const m = market[f.key];
+    let mk = "Market price loading…";
+    if (m && d.answer) { const diff = (m - d.answer) / d.answer * 100; mk = `Market now ${usd(m)} <span class="${diff>=0?"up":"dn"}">(${diff>=0?"+":""}${diff.toFixed(2)}% since last round)</span>`; }
+    else if (m) mk = `Market now ${usd(m)}`;
+    const status = d.active === false ? ['off','Paused'] : d.finalized ? ['ok','Finalized'] : d.round ? ['wait','Collecting'] : ['wait','No round yet'];
+    return `<div class="pc">
+      <div class="top"><div class="asset"><div class="ic ${f.key}">${f.sym}</div><div><b>${f.pair}</b><small>${f.name}</small></div></div><span class="pill ${status[0]}">${status[1]}</span></div>
+      <div class="price mono">${d.answer ? usd(d.answer) : "–"}</div>
+      <div class="mkt">${mk}</div>
+      <div class="meta">
+        <div>Round<b class="mono">#${d.round ?? "–"}</b></div>
+        <div>Updated<b>${d.updatedAt ? ago(d.updatedAt) : (d.snapshot ? "Oct 31, 2026" : "–")}</b></div>
+        <div>Quorum<b>${d.quorum ?? 1} agent${(d.quorum ?? 1) > 1 ? "s" : ""}</b></div>
+        <div>Heartbeat<b>${d.heartbeat ? (d.heartbeat/60)+" min" : "60 min"}</b></div>
+      </div>
+      ${d.tx ? txLink(d.tx, "Finalize tx ↗") : ""}
+    </div>`;
+  }).join("");
 }
 
-main().catch((e) => {
-  const el = document.getElementById("fatal");
-  el.hidden = false;
-  el.textContent = "error: " + (e && e.message ? e.message : e);
-});
+function renderJob(j, btcNow) {
+  $("jThr").textContent = usd(j.threshold);
+  $("jRew").textContent = j.reward + " tPOT";
+  $("jTrig").textContent = ["Interval","Price above","Price below"][j.trigger ?? 2];
+  $("jOne").textContent = j.oneShot === false ? "Repeating" : "One-shot";
+  $("jBal").textContent = j.balance != null ? j.balance + " tPOT" : "–";
+  const done = j.executed;
+  $("jobPill").className = "pill " + (done ? "ok" : j.active ? "wait" : "off");
+  $("jobPill").textContent = done ? "Executed by keeper" : j.active ? "Watching" : "Inactive";
+  if (btcNow) {
+    $("jNow").textContent = usd(btcNow);
+    const gap = (btcNow - j.threshold) / j.threshold * 100;
+    $("jGap").textContent = gap < 0 ? `${Math.abs(gap).toFixed(3)}% below the line, so it fired` : `${gap.toFixed(2)}% above the line`;
+    $("jBar").style.width = Math.max(4, Math.min(100, 50 + gap * 10)) + "%";
+  }
+}
+
+function renderVault(on, at) {
+  $("shield").classList.toggle("on", on);
+  $("vPill").className = "pill " + (on ? "ok" : "wait");
+  $("vPill").textContent = on ? "Protected" : "Normal";
+  $("vTitle").textContent = on ? "Protected mode is ON" : "Normal mode";
+  $("vText").innerHTML = on
+    ? `A keeper agent flipped this switch automatically when BTC hit <b class="mono">${usd(at)}</b>, using the price PotFeeds posted on-chain. No human pressed anything.`
+    : "Waiting. When BTC drops below the job's line, a keeper agent will switch this vault into protected mode.";
+}
+
+function renderTimeline(items) {
+  if (!items.length) { $("tl").innerHTML = '<div class="empty">No events yet.</div>'; return; }
+  $("tl").innerHTML = items.map((e) => `<div class="ev"><div class="e">${e.icon}</div><div class="t">${e.title}<small>${e.sub}</small></div>${txLink(e.tx)}</div>`).join("");
+}
+
+async function loadMarket() {
+  try {
+    const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,polkadot&vs_currencies=usd");
+    const j = await r.json();
+    market = { btc: j.bitcoin?.usd, eth: j.ethereum?.usd, dot: j.polkadot?.usd };
+  } catch { /* optional */ }
+}
+
+async function loadEvents(latest) {
+  if (eventsCache && Date.now() - eventsAt < 60000) return eventsCache;
+  const [rounds, runs, prot] = await Promise.all([
+    agg.queryFilter(agg.filters.RoundFinalized(), DEPLOY_BLOCK, latest),
+    reg.queryFilter(reg.filters.JobExecuted(), DEPLOY_BLOCK, latest),
+    vault.queryFilter(vault.filters.ProtectedModeOn(), DEPLOY_BLOCK, latest),
+  ]);
+  const name = (id) => (FEEDS.find((f) => f.id === id) || {}).pair || short(id);
+  const items = [
+    ...rounds.map((e) => ({ b:e.blockNumber, i:e.index, tx:e.transactionHash, icon:"📈",
+      title:`${name(e.args[0])} round #${e.args[1]} finalized at <b class="mono">${usd(Number(e.args[2]) / 1e8)}</b>`,
+      sub:`Block ${e.blockNumber} · ${e.args[3]} feeder submission${e.args[3] == 1n ? "" : "s"}` })),
+    ...runs.map((e) => ({ b:e.blockNumber, i:e.index, tx:e.transactionHash, icon:"🤖",
+      title:`Keeper executed job #${e.args[0]} ${e.args[2] ? "successfully" : "(target failed)"}`,
+      sub:`Block ${e.blockNumber} · keeper ${short(e.args[1])} earned ${ethers.formatEther(e.args[3])} tPOT` })),
+    ...prot.map((e) => ({ b:e.blockNumber, i:e.index + 0.5, tx:e.transactionHash, icon:"🛡️",
+      title:`DemoVault entered protected mode`, sub:`Block ${e.blockNumber} · triggered at ${usd(Number(e.args[0]) / 1e8)}` })),
+  ].sort((a, b) => b.b - a.b || b.i - a.i);
+  const paid = runs.reduce((s, e) => s + Number(ethers.formatEther(e.args[3])), 0);
+  eventsCache = { items, runs: runs.length, paid, roundTx: Object.fromEntries(rounds.map((e) => [e.args[0], e.transactionHash])) };
+  eventsAt = Date.now();
+  return eventsCache;
+}
+
+function showSnapshot(err) {
+  $("netDot").className = "dot warn"; $("netTxt").textContent = "RPC unreachable, showing last verified snapshot";
+  $("banner").style.display = "block";
+  $("banner").textContent = "The Portaldot testnet RPC isn't responding right now, so this shows the last verified on-chain snapshot (Oct 31, 2026). It switches back to live data automatically.";
+  renderPrices(Object.fromEntries(FEEDS.map((f) => [f.key, { ...SNAPSHOT.feeds[f.key], finalized:true, snapshot:true }])));
+  renderJob({ threshold:SNAPSHOT.threshold, reward:SNAPSHOT.reward, trigger:2, oneShot:true, active:false, executed:true }, SNAPSHOT.feeds.btc.answer);
+  renderVault(SNAPSHOT.protected, SNAPSHOT.triggeredAt);
+  renderTimeline([
+    { icon:"🤖", title:"Keeper executed job #0 successfully", sub:"Snapshot · keeper earned 0.5 tPOT", tx:SNAPSHOT.keeperTx },
+    ...FEEDS.map((f) => ({ icon:"📈", title:`${f.pair} round #1 finalized at <b class="mono">${usd(SNAPSHOT.feeds[f.key].answer)}</b>`, sub:"Snapshot", tx:SNAPSHOT.feeds[f.key].tx })),
+  ]);
+  $("sRuns").textContent = "1"; $("sPaid").textContent = "0.5";
+  [1,2,3,4].forEach((n) => setStep(n, true, ["Prices fetched","Round finalized","Job executed","Vault protected · keeper paid"][n-1]));
+  console.warn(err);
+}
+
+async function refresh() {
+  try {
+    const latest = await provider.getBlockNumber();
+    $("blk").textContent = latest.toLocaleString("en-US");
+    $("netDot").className = "dot live"; $("netTxt").textContent = "Live from chain";
+    $("banner").style.display = "none";
+
+    const ev = await loadEvents(latest).catch(() => eventsCache || { items:[], runs:0, paid:0, roundTx:{} });
+    const data = {};
+    await Promise.all(FEEDS.map(async (f) => {
+      const fd = await agg.feeds(f.id);
+      const d = { round: Number(fd.latestRound), quorum: Number(fd.minSubmissions), heartbeat: Number(fd.heartbeat), active: fd.active, tx: ev.roundTx[f.id] || SNAPSHOT.feeds[f.key].tx };
+      if (fd.latestRound > 0n) {
+        const r = await agg.rounds(f.id, fd.latestRound);
+        d.answer = Number(r.answer) / 10 ** Number(fd.decimals);
+        d.updatedAt = Number(r.updatedAt); d.finalized = r.finalized;
+      }
+      data[f.key] = d;
+    }));
+    renderPrices(data);
+
+    const jb = await reg.jobs(0);
+    const lastRun = Number(jb.lastRun);
+    const job = { threshold: Number(jb.threshold) / 1e8, reward: Number(ethers.formatEther(jb.reward)), balance: Number(ethers.formatEther(jb.balance)),
+                  trigger: Number(jb.trigger), oneShot: jb.oneShot, active: jb.active, executed: lastRun > 0 || ev.runs > 0 };
+    renderJob(job, data.btc.answer);
+
+    const [on, at] = await Promise.all([vault.protectedMode(), vault.triggeredAt()]);
+    renderVault(on, Number(at) / 1e8);
+    renderTimeline(ev.items);
+    $("sRuns").textContent = ev.runs; $("sPaid").textContent = ev.paid;
+
+    const anyRound = FEEDS.some((f) => data[f.key].round > 0);
+    const anyFinal = FEEDS.some((f) => data[f.key].finalized);
+    setStep(1, anyRound, anyRound ? "Prices fetched for 3 feeds" : "Waiting for feeder agent");
+    setStep(2, anyFinal, anyFinal ? "Round finalized on-chain" : "Waiting for quorum");
+    setStep(3, job.executed, job.executed ? "Job #0 executed" : "Keeper watching job #0");
+    setStep(4, on && ev.paid > 0 || on, on ? `Vault protected · keeper paid ${ev.paid || job.reward} tPOT` : "Waiting for trigger");
+    $("upd").textContent = "updated " + new Date().toLocaleTimeString();
+  } catch (e) { showSnapshot(e); }
+}
+
+(async () => { await loadMarket(); await refresh(); setInterval(refresh, 15000); setInterval(loadMarket, 60000); })();
 </script>
 </body>
 </html>
