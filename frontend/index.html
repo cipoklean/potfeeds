@@ -278,9 +278,20 @@ const short = (a) => a.slice(0, 8) + "…" + a.slice(-6);
 const usd = (n) => n >= 100 ? "$" + n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})
                             : "$" + n.toLocaleString("en-US",{minimumFractionDigits:4,maximumFractionDigits:4});
 const ago = (s) => { const d = Math.max(0, Date.now()/1000 - s); if (d < 90) return Math.round(d)+"s ago"; if (d < 5400) return Math.round(d/60)+" min ago"; if (d < 172800) return Math.round(d/3600)+" h ago"; return Math.round(d/86400)+" days ago"; };
-const txLink = (h, label) => `<a href="${EXPLORER}/tx/${h}" target="_blank" rel="noopener">${label || "View tx ↗"}</a>`;
+// The Portaldot explorer is a Substrate explorer with hash routes; it has no /tx/<evm-hash> page, so link the block (events tab).
+const TX_BLOCKS = {
+  "0x4b45c7384b3d930e19d34f807dc1a1f57da557e3a6332d597cf3718551b72791": 265087,
+  "0x4206fa071d6bf4c6e8e7483534afc2797bf11b9bb104e08e7666836e371356af": 265088,
+  "0xa6d0a05c92a265a48312b5a6b1f739399b3b0286402a730f278bfd1d96a0e4ae": 265090,
+  "0x14b74da65d0cb0dcff5a1d38730bcee27ac7ff60d3e08f6a6ec3ea35e869292d": 265093,
+};
+const txLink = (h, label, b) => {
+  const blk = b ?? TX_BLOCKS[(h || "").toLowerCase()];
+  const url = blk != null ? `${EXPLORER}/#/blocks/${blk}?tab=events` : `${EXPLORER}/`;
+  return `<a class="tx" href="${url}" target="_blank" rel="noopener" title="${h || ""}">${label || "View block ↗"}</a>`;
+};
 
-for (const [k, el] of [["agg","cAgg"],["reg","cReg"],["vault","cVault"]]) { $(el).textContent = ADDR[k]; $(el).href = `${EXPLORER}/address/${ADDR[k]}`; }
+for (const [k, el] of [["agg","cAgg"],["reg","cReg"],["vault","cVault"]]) { $(el).textContent = ADDR[k]; $(el).href = `${EXPLORER}/#/accounts/${ADDR[k]}`; }
 
 const provider = new ethers.JsonRpcProvider(RPC, 420420777, { staticNetwork: true });
 const agg = new ethers.Contract(ADDR.agg, AGG_ABI, provider);
@@ -309,7 +320,7 @@ function renderPrices(data) {
         <div>Quorum<b>${d.quorum ?? 1} agent${(d.quorum ?? 1) > 1 ? "s" : ""}</b></div>
         <div>Heartbeat<b>${d.heartbeat ? (d.heartbeat/60)+" min" : "60 min"}</b></div>
       </div>
-      ${d.tx ? txLink(d.tx, "Finalize tx ↗") : ""}
+      ${d.tx ? txLink(d.tx, "Finalize block ↗", d.block) : ""}
     </div>`;
   }).join("");
 }
@@ -343,7 +354,7 @@ function renderVault(on, at) {
 
 function renderTimeline(items) {
   if (!items.length) { $("tl").innerHTML = '<div class="empty">No events yet.</div>'; return; }
-  $("tl").innerHTML = items.map((e) => `<div class="ev"><div class="e">${e.icon}</div><div class="t">${e.title}<small>${e.sub}</small></div>${txLink(e.tx)}</div>`).join("");
+  $("tl").innerHTML = items.map((e) => `<div class="ev"><div class="e">${e.icon}</div><div class="t">${e.title}<small>${e.sub}</small></div>${txLink(e.tx, null, e.b)}</div>`).join("");
 }
 
 async function loadMarket() {
